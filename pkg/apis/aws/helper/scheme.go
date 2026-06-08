@@ -192,6 +192,26 @@ func HasEFAWorkerPool(workers []gardencorev1beta1.Worker) (bool, error) {
 	return false, nil
 }
 
+// SeedProviderConfigFromSeed extracts the SeedProviderConfig from the seed's provider config.
+// Returns nil if the seed has no provider config set.
+func SeedProviderConfigFromSeed(seed *gardencorev1beta1.Seed) (*api.SeedProviderConfig, error) {
+	if seed == nil || seed.Spec.Provider.ProviderConfig == nil {
+		return nil, nil
+	}
+	data, err := marshalRaw(seed.Spec.Provider.ProviderConfig)
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal seed provider config: %w", err)
+	}
+	if data == nil {
+		return nil, nil
+	}
+	seedConfig := &api.SeedProviderConfig{}
+	if _, _, err := lenientDecoder.Decode(data, nil, seedConfig); err != nil {
+		return nil, fmt.Errorf("could not decode seed provider config: %w", err)
+	}
+	return seedConfig, nil
+}
+
 // InfrastructureStateFromRaw extracts the state from the Infrastructure. If no state was available, it returns a "zero" value InfrastructureState object.
 func InfrastructureStateFromRaw(raw *runtime.RawExtension) (*api.InfrastructureState, error) {
 	state := &api.InfrastructureState{}
